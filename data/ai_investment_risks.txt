@@ -1,0 +1,7 @@
+AI can improve investment workflows, but it also introduces risks. The most important risk is overreliance: users may treat fluent model output as verified analysis. In investment contexts, this can lead to poor decisions if the answer is based on weak evidence, outdated documents, or incomplete retrieval.
+
+Another risk is data leakage. Financial research often includes confidential notes, client information, or proprietary models. Local systems reduce exposure to external APIs, but teams still need access controls, logging, and careful handling of sensitive files.
+
+RAG systems can also fail when retrieval quality is poor. If the relevant document is missing, if chunking breaks important context, or if the query is ambiguous, the system may retrieve plausible but incomplete evidence. Confidence scoring should reflect similarity strength, keyword coverage, and whether enough supporting evidence exists.
+
+Governance is essential for AI-assisted investment workflows. Teams should maintain human review, document provenance, versioning, and evaluation sets. The goal is not to replace analysts but to make research faster, more traceable, and easier to audit.

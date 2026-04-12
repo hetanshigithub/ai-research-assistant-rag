@@ -1,0 +1,7 @@
+Artificial intelligence is becoming a practical layer in financial research, portfolio monitoring, fraud detection, and client service. In investment teams, AI systems are most useful when they reduce manual information processing rather than making unsupervised investment decisions. Analysts can use AI to summarize earnings calls, compare management commentary across quarters, detect changes in risk language, and organize market research.
+
+The strongest use cases combine human judgment with machine assistance. For example, a research analyst might ask an AI assistant to compare revenue guidance across several companies, retrieve the exact passages from filings, and highlight where assumptions changed. This can shorten the first-pass review cycle while still leaving final interpretation to the analyst.
+
+Financial firms must treat AI outputs as decision-support signals, not authoritative recommendations. Model outputs can be incomplete, stale, or biased toward the available source documents. Any workflow that influences trades, credit decisions, or client recommendations needs review, audit trails, and clear ownership.
+
+Successful AI adoption in finance usually depends on three controls: trusted data sources, transparent evidence, and measurable evaluation. A retrieval-augmented system is useful because it can show the documents behind an answer, allowing analysts to verify whether the conclusion is supported by the underlying text.

@@ -1,0 +1,7 @@
+LLM evaluation should measure whether the system retrieves the right evidence and whether the generated answer is faithful to that evidence. In a RAG system, a polished answer is not enough. The answer must be grounded in the retrieved context, and the retrieved context must be relevant to the user's query.
+
+Retrieval quality can be evaluated with similarity scores, keyword coverage, source diversity, and manual review of top-k chunks. If the top chunks come from unrelated documents, the generated answer may sound confident while being poorly supported. This is one reason RAG systems should print or log the retrieved evidence.
+
+Answer quality can be evaluated with faithfulness, completeness, clarity, and usefulness. Faithfulness asks whether every important claim can be traced to the context. Completeness asks whether the answer covers the main parts of the query. Clarity asks whether the answer is easy to read. Usefulness asks whether the response helps the user make progress.
+
+Evaluation should be repeatable. Teams can maintain a small benchmark set of representative queries, expected evidence sources, and acceptance criteria. Even a lightweight JSON log of query, retrieved chunks, scores, answer, and confidence can help diagnose regressions over time.

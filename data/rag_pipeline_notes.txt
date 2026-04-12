@@ -1,0 +1,7 @@
+Retrieval-augmented generation, or RAG, is a system design pattern for answering questions with external documents. Instead of relying only on a model's internal knowledge, the pipeline retrieves relevant text chunks from a document collection and uses them as grounding context for the final answer.
+
+A practical RAG pipeline has several stages. First, documents are loaded from sources such as PDFs, text files, internal wikis, or research reports. Second, the documents are cleaned and split into overlapping chunks so each unit is small enough to embed and retrieve. Third, an embedding model converts each chunk into a dense vector representation. Finally, a retriever compares the query embedding with chunk embeddings and returns the most similar evidence.
+
+Chunking quality matters. Chunks that are too small may lose context, while chunks that are too large may retrieve irrelevant information. Overlap helps preserve continuity across chunk boundaries. For many research workflows, a chunk size between 150 and 300 words is a reasonable starting point, but the best setting depends on the document type.
+
+RAG systems should expose retrieved evidence to the user. Showing source files, chunk identifiers, similarity scores, and short previews makes the system easier to debug and easier to trust. Evidence display is especially important when the answer will inform business, finance, or policy decisions.

@@ -1,0 +1,7 @@
+Research automation is valuable when it removes repetitive collection and synthesis work from analysts. Common tasks include searching document libraries, summarizing long reports, extracting risks, comparing viewpoints across sources, and preparing first-draft research briefs.
+
+An AI research assistant should not hide its evidence. A useful assistant retrieves source passages, shows why those passages were selected, and separates direct evidence from generated synthesis. This makes the workflow more transparent and helps users decide whether the answer is strong enough to rely on.
+
+In finance and strategy teams, research automation is often most effective as a first-pass tool. It can scan a folder of market notes, investor letters, policy documents, or earnings summaries and produce a structured answer. The analyst can then inspect the evidence and refine the conclusion.
+
+The most realistic systems are modest but dependable. They do not promise fully autonomous research. Instead, they improve search, organization, summarization, and evidence tracking. This is why local RAG projects are useful for demonstrating applied AI engineering skills.
