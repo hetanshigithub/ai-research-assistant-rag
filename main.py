@@ -6,11 +6,9 @@ import warnings
 from datetime import datetime, timezone
 from pathlib import Path
 
-from src.chunking import chunk_documents
-from src.data_loader import load_documents
-from src.embeddings import EmbeddingModel
+from src.embeddings import load_embedder
 from src.generator import generate_answer
-from src.retriever import SemanticRetriever
+from src.pipeline import build_or_load_retriever
 
 
 warnings.filterwarnings(
@@ -71,7 +69,23 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--model-name",
         default="sentence-transformers/all-MiniLM-L6-v2",
-        help="Sentence-transformers embedding model.",
+        help="Sentence-transformers embedding model ('hashing' selects an offline lexical embedder).",
+    )
+    parser.add_argument(
+        "--index-dir",
+        default="index",
+        help="Folder where the FAISS index is saved and reused between runs.",
+    )
+    parser.add_argument(
+        "--index-type",
+        choices=["flat", "hnsw"],
+        default="flat",
+        help="FAISS index type: exact (flat) or approximate (hnsw).",
+    )
+    parser.add_argument(
+        "--rebuild-index",
+        action="store_true",
+        help="Ignore any saved index and rebuild it from the documents.",
     )
     parser.add_argument(
         "--show_chunks",
@@ -163,20 +177,26 @@ def main() -> None:
         raise SystemExit("Query cannot be empty.")
 
     data_dir = Path(args.data_dir)
-    documents = load_documents(data_dir)
-    chunks = chunk_documents(
-        documents,
-        chunk_size=args.chunk_size,
-        overlap=args.chunk_overlap,
-    )
+    embedding_model = load_embedder(args.model_name)
+    try:
+        build = build_or_load_retriever(
+            data_dir,
+            embedding_model,
+            index_dir=Path(args.index_dir),
+            chunk_size=args.chunk_size,
+            overlap=args.chunk_overlap,
+            index_type=args.index_type,
+            force_rebuild=args.rebuild_index,
+        )
+    except ValueError as exc:
+        raise SystemExit(str(exc))
 
-    if not chunks:
-        raise SystemExit(f"No usable text chunks found in {data_dir.resolve()}.")
-
-    embedding_model = EmbeddingModel(model_name=args.model_name)
-    retriever = SemanticRetriever(embedding_model)
-    retriever.index(chunks)
+    retriever = build.retriever
     retrieved = retriever.retrieve(query, top_k=args.top_k)
+    print(
+        f"Index: {build.chunks} chunks from {build.documents} documents "
+        f"({'built' if build.rebuilt else 'loaded from ' + args.index_dir})"
+    )
 
     answer = generate_answer(query, retrieved)
     payload = {
@@ -197,9 +217,11 @@ def main() -> None:
         "confidence_score": answer["confidence_score"],
         "metadata": {
             "data_dir": str(data_dir),
-            "documents_loaded": len(documents),
-            "chunks_indexed": len(chunks),
+            "documents_loaded": build.documents,
+            "chunks_indexed": build.chunks,
             "top_k": args.top_k,
+            "embedding_model": embedding_model.model_name,
+            "index_type": args.index_type,
         },
     }
 

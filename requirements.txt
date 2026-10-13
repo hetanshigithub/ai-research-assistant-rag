@@ -1,4 +1,2 @@
+-r requirements-core.txt
 sentence-transformers
-numpy
-scikit-learn
-pypdf
