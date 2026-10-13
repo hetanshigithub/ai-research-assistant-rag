@@ -47,16 +47,16 @@ flowchart LR
     G --> O[CLI / REST API]
 ```
 
-How the pieces fit:
+A few notes on how it works:
 
-- **Vector store.** Embeddings are L2-normalized and stored in a FAISS inner-product index, so the score returned for each chunk is its cosine similarity to the question. The default `flat` index is exact. An approximate `hnsw` index is available for larger collections.
-- **Persistence.** The index is saved together with the chunk text and metadata, because FAISS stores only vectors. A fingerprint of the documents, the chunking settings, the embedding model and the index type is saved with it. If any of these change, the index is rebuilt automatically; otherwise it is loaded from disk.
-- **Pluggable embedder.** The default is `sentence-transformers/all-MiniLM-L6-v2`. An offline lexical embedder (`--model-name hashing`) needs no model download and is what the tests and CI use.
+- Embeddings are normalized and stored in a FAISS inner-product index, so the score for each chunk is its cosine similarity to the question. The default `flat` index is exact. `hnsw` is available if the document set gets large.
+- FAISS only stores vectors, so the chunk text and metadata are saved next to the index. A fingerprint of the documents, chunk settings, model and index type is saved too. If any of those change, the index is rebuilt. Otherwise it is loaded from disk.
+- The default model is `sentence-transformers/all-MiniLM-L6-v2`. There is also a small offline embedder (`--model-name hashing`) that needs no download. The tests and CI use it.
 
 ## Quick start
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirements.txt   # tested on Python 3.12; PyTorch may lack wheels for the newest Python
 python main.py "impact of AI in finance"
 ```
 
@@ -77,7 +77,7 @@ Put your documents in `data/` (`.txt` and `.pdf`). Run `python main.py` without 
 uvicorn api.main:app --reload
 ```
 
-Interactive docs are served at `http://localhost:8000/docs`. The embedding model and index are loaded once at startup, so each request only embeds the question, searches the index and formats the answer. The service refuses to start if the data folder is missing or empty.
+Interactive docs are at `http://localhost:8000/docs`. The model and index are loaded once at startup. If the data folder is missing or empty, the service refuses to start.
 
 | Method | Path | Description |
 |---|---|---|
@@ -91,7 +91,7 @@ curl -s -X POST localhost:8000/query \
   -d '{"question": "Why is an inner-product index used for cosine similarity?", "top_k": 3}'
 ```
 
-Configuration through environment variables: `DATA_DIR` (`data`), `INDEX_DIR` (`index`), `EMBEDDING_MODEL` (`sentence-transformers/all-MiniLM-L6-v2`), `CHUNK_SIZE` (`180`), `CHUNK_OVERLAP` (`35`), `INDEX_TYPE` (`flat`).
+Settings come from environment variables: `DATA_DIR`, `INDEX_DIR`, `EMBEDDING_MODEL`, `CHUNK_SIZE`, `CHUNK_OVERLAP` and `INDEX_TYPE` (defaults are in `api/main.py`).
 
 ## Docker
 
@@ -99,14 +99,11 @@ Configuration through environment variables: `DATA_DIR` (`data`), `INDEX_DIR` (`
 docker compose up --build
 ```
 
-- The embedding model is downloaded when the image is built, so the container runs without network access.
-- `./data` is mounted read-only; add or edit documents and restart to re-index.
-- The FAISS index lives on a named volume, so restarts load it instead of re-embedding.
-- The container runs as a non-root user and has a health check on `/health`.
+The model is downloaded while the image is built, so the container does not need internet at runtime. `./data` is mounted read-only, and the FAISS index is kept on a named volume so restarts don't re-embed everything. The container runs as a non-root user and has a health check on `/health`.
 
 ## Evaluation
 
-`evaluation/eval_set.jsonl` holds 37 questions: 30 that the documents answer and 7 that they do not. Each answerable question lists the exact text of its evidence and the facts a correct answer must contain.
+`evaluation/eval_set.jsonl` has 37 questions: 30 that the documents answer and 7 that they don't. Each answerable question lists the exact text of its evidence and the facts a correct answer should contain.
 
 ```bash
 python -m evaluation.run_eval                                   # default model
@@ -114,7 +111,7 @@ python -m evaluation.run_eval --embedding-model hashing         # offline, no do
 python -m evaluation.run_eval --sweep-chunk-sizes 40,80,120,180 # chunk-size comparison
 ```
 
-**Retrieval metrics**
+Retrieval metrics:
 
 | Metric | Definition |
 |---|---|
@@ -123,9 +120,9 @@ python -m evaluation.run_eval --sweep-chunk-sizes 40,80,120,180 # chunk-size com
 | precision@k | Fraction of the top-k chunks that contain evidence |
 | MRR | Mean of 1/rank of the first chunk that contains evidence |
 
-Evidence is labeled by its **text**, not by chunk number. A chunk is relevant if it contains the evidence phrase, so the labels stay valid when the chunk size changes. A test checks that every phrase still exists in its source document.
+Evidence is labeled by its text, not by chunk number. A chunk counts as relevant if it contains the evidence phrase, so the labels still work when the chunk size changes. A test checks that every phrase exists in its source document.
 
-**Answer-quality checks** (no LLM judge, so they are simple proxies)
+Answer-quality checks (no LLM judge, so these are simple proxies):
 
 | Check | What it measures |
 |---|---|
@@ -135,38 +132,42 @@ Evidence is labeled by its **text**, not by chunk number. A chunk is relevant if
 
 ### Results
 
-These numbers use the **offline lexical embedder** (`hashing-2048`), the same one CI runs, with the default chunking (180 words, 20 chunks from 11 documents). They check the pipeline and the labels. They are **not** a measurement of a semantic embedding model; run the command above without `--embedding-model hashing` for that.
+Measured with `sentence-transformers/all-MiniLM-L6-v2`, default chunking (180 words, overlap 35, 20 chunks from 11 documents), 30 answerable and 7 unanswerable questions.
 
 | k | recall@k | hit@k | precision@k |
 |---|---------:|------:|------------:|
-| 1 | 0.933 | 0.933 | 0.933 |
-| 3 | 0.967 | 0.967 | 0.367 |
-| 5 | 1.000 | 1.000 | 0.233 |
+| 1 | 0.683 | 0.700 | 0.700 |
+| 3 | 0.867 | 0.867 | 0.344 |
+| 5 | 0.933 | 0.933 | 0.220 |
 
-MRR 0.957 · fact coverage 0.767 · groundedness 1.000 · confidence AUROC 1.000
+MRR 0.798 · fact coverage 0.717 (all required facts present for 66.7% of questions) · groundedness 1.000 · confidence AUROC 1.000
 
-Chunk-size comparison, same embedder:
+Chunk-size comparison, same model (overlap is 20% of the chunk size in this sweep):
 
-| Chunk size (words) | Chunks | recall@1 | recall@5 | MRR | Fact coverage |
-|---:|---:|---:|---:|---:|---:|
-| 40 | 70 | 0.667 | 0.917 | 0.814 | 0.825 |
-| 80 | 35 | 0.817 | 0.950 | 0.907 | 0.800 |
-| 120 | 23 | 0.800 | 0.967 | 0.900 | 0.733 |
-| 180 | 20 | 0.933 | 1.000 | 0.957 | 0.767 |
+| Chunk size (words) | Chunks | recall@1 | recall@3 | recall@5 | MRR | Fact coverage |
+|---:|---:|---:|---:|---:|---:|---:|
+| 40 | 70 | 0.650 | 0.800 | 0.833 | 0.768 | 0.669 |
+| 80 | 35 | 0.667 | 0.883 | 0.917 | 0.803 | 0.811 |
+| 120 | 23 | 0.533 | 0.900 | 0.933 | 0.725 | 0.733 |
+| 180 | 20 | 0.750 | 0.900 | 0.933 | 0.829 | 0.717 |
 
-What these runs show:
+The offline lexical embedder used by CI (`--embedding-model hashing`) scores recall@1 0.933 and recall@5 1.000 on the same questions. It is kept as a fast regression baseline, not as a quality claim (see the limitations below).
 
-- **Smaller chunks trade recall for precision.** recall@1 falls from 0.933 to 0.667 as chunks shrink from 180 to 40 words, while fact coverage rises from 0.767 to 0.825.
-- **The answer step limits quality more than retrieval.** Of the 8 answerable questions whose answers were missing a required fact, 7 had a relevant chunk ranked first. The extractive generator picked sentences from the right chunk that did not contain the fact.
-- **Groundedness is 1.000 by construction.** The generator copies sentences from the context, so this check is a regression guard for when it is replaced by a generator that writes freely.
-- **The default confidence threshold is not calibrated.** Confidence separates the two groups (AUROC 1.000), but a fixed threshold of 0.5 wrongly flags 57% of answerable questions. The evaluation prints a suggested threshold, which is fit on the same questions and therefore optimistic.
+What I take from this:
+
+- The right evidence is in the top 5 for 93% of questions and ranked first for 70%. Four questions have no relevant chunk in the top 3 (q06, q13, q18, q27).
+- Chunk size doesn't show a clean trend. recall@1 and MRR are best at 180 words, fact coverage is best at 80 words, and 120 words is worst for recall@1. With 30 questions, one question moves recall@1 by 0.033, so small differences are noise. The 180 row (0.750) differs from the main run (0.683) only because the sweep uses an overlap of 36 words instead of 35.
+- Fact coverage (0.717) is well below recall@5 (0.933), so some retrieved evidence doesn't make it into the extractive answer.
+- Groundedness is 1.000 because the generator copies sentences from the context. The check is there to catch regressions if the generator is ever replaced.
+- Confidence separates the two groups well (mean 0.651 for answerable, 0.226 for unanswerable). The default threshold of 0.5 flags all 7 unanswerable questions but also 2 of the 30 answerable ones. The suggested threshold of 0.382 is fit on the same questions, so it is optimistic.
 
 ### Limitations of this evaluation
 
 - The corpus is small (11 documents, 20 chunks at the default size), so recall@k is optimistic. With 20 chunks, a random top 5 already contains any given chunk 25% of the time.
 - The questions were written from the documents, so they share vocabulary with them. Questions written independently would be harder.
 - Fact coverage uses keyword matching and can miss correct paraphrases.
-- Results from the offline embedder do not transfer to `all-MiniLM-L6-v2`.
+- The offline lexical embedder scores higher than MiniLM here (recall@1 0.933 vs 0.683) because the questions reuse wording from the documents. That reflects the question set, not a better embedder.
+- Seven unanswerable questions are too few to trust the abstention numbers beyond "the signal exists".
 
 ## Tests
 
@@ -175,7 +176,7 @@ pip install -r requirements-dev.txt
 python -m pytest
 ```
 
-The suite uses the offline embedder, so it needs no model download. It covers the FAISS store (save and load, corrupt-index detection, dimension checks, HNSW), index invalidation for each setting that affects it, the API (including `503` before startup and startup failure with no documents), the metrics, the answer checks, and an end-to-end evaluation run. CI runs the tests and a retrieval regression gate on every push.
+The tests use the offline embedder, so no model download is needed. They cover the FAISS store (save and load, corrupt index, dimension checks, HNSW), when the index gets rebuilt, the API (including `503` before startup and failing to start with no documents), the metrics, the answer checks, and a full evaluation run. CI runs the tests and a recall@5 check on every push.
 
 ## Project layout
 
