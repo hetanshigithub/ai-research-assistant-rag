@@ -9,3 +9,4 @@ outputs
 tests
 .env
 .DS_Store
+uploads

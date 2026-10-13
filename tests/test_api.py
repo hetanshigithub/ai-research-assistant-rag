@@ -9,6 +9,7 @@ def client(tmp_path, data_dir):
     settings = Settings(
         data_dir=data_dir,
         index_dir=tmp_path / "index",
+        upload_dir=tmp_path / "uploads",
         embedding_model="hashing",
         chunk_size=180,
         chunk_overlap=35,

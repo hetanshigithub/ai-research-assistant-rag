@@ -3,11 +3,12 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import dataclass
+from typing import Sequence
 from datetime import datetime, timezone
 from pathlib import Path
 
 from src.chunking import TextChunk, chunk_documents
-from src.data_loader import Document, load_documents
+from src.data_loader import Document, load_corpus
 from src.retriever import SemanticRetriever
 from src.vector_store import read_metadata
 
@@ -57,12 +58,13 @@ def build_or_load_retriever(
     overlap: int = 35,
     index_type: str = "flat",
     force_rebuild: bool = False,
+    extra_dirs: Sequence[Path] = (),
 ) -> IndexBuild:
     """Return a ready retriever, reusing a saved index when it is still valid.
 
     With ``index_dir=None`` nothing is read from or written to disk.
     """
-    documents = load_documents(Path(data_dir))
+    documents = load_corpus([Path(data_dir), *map(Path, extra_dirs)])
     fingerprint = corpus_fingerprint(
         documents, embedding_model.model_name, chunk_size, overlap, index_type
     )

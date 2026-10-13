@@ -6,3 +6,4 @@ __pycache__/
 outputs/results.json
 outputs/eval_report.json
 index/
+uploads/

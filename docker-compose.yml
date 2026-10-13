@@ -8,6 +8,11 @@ services:
       - ./data:/app/data:ro
       # Persist the FAISS index between restarts.
       - index:/app/index
+      # Documents added through the API.
+      - uploads:/app/uploads
+    environment:
+      CORS_ORIGINS: "http://localhost:5173"
 
 volumes:
   index:
+  uploads:

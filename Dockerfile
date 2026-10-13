@@ -25,10 +25,11 @@ COPY data ./data
 
 ENV DATA_DIR=/app/data \
     INDEX_DIR=/app/index \
+    UPLOAD_DIR=/app/uploads \
     EMBEDDING_MODEL=${EMBEDDING_MODEL} \
     HF_HUB_OFFLINE=1
 
-RUN useradd --create-home appuser && mkdir -p /app/index && chown appuser /app/index
+RUN useradd --create-home appuser && mkdir -p /app/index /app/uploads && chown appuser /app/index /app/uploads
 USER appuser
 
 EXPOSE 8000

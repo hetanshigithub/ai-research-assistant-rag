@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Sequence
 
 
 SUPPORTED_EXTENSIONS = {".txt", ".pdf"}
@@ -15,19 +16,37 @@ class Document:
     text: str
 
 
+def list_document_paths(directory: Path) -> list[Path]:
+    """Supported files in a directory (or the file itself), sorted by path."""
+    if directory.is_file():
+        return [directory]
+    return sorted(
+        path
+        for path in directory.rglob("*")
+        if path.is_file() and path.suffix.lower() in SUPPORTED_EXTENSIONS
+    )
+
+
 def load_documents(data_dir: Path) -> list[Document]:
     """Load all supported documents from a directory recursively."""
-    if not data_dir.exists():
-        raise FileNotFoundError(f"Data directory does not exist: {data_dir}")
+    return load_corpus([data_dir])
 
-    if data_dir.is_file():
-        paths = [data_dir]
-    else:
-        paths = sorted(
-            path
-            for path in data_dir.rglob("*")
-            if path.is_file() and path.suffix.lower() in SUPPORTED_EXTENSIONS
-        )
+
+def load_corpus(directories: Sequence[Path]) -> list[Document]:
+    """Load documents from several directories.
+
+    The first directory is required. Later ones (for example a folder of uploads)
+    are optional and skipped when they do not exist yet.
+    """
+    primary = Path(directories[0])
+    if not primary.exists():
+        raise FileNotFoundError(f"Data directory does not exist: {primary}")
+
+    paths: list[Path] = []
+    for directory in directories:
+        directory = Path(directory)
+        if directory.exists():
+            paths.extend(list_document_paths(directory))
 
     documents: list[Document] = []
     for path in paths:

@@ -81,7 +81,10 @@ Interactive docs are at `http://localhost:8000/docs`. The model and index are lo
 
 | Method | Path | Description |
 |---|---|---|
-| `POST` | `/query` | Ask a question; returns the structured answer, the retrieved chunks with scores, and latency |
+| `POST` | `/query` | Ask a question; returns the structured answer, where each answer sentence sits in the retrieved text (`citations`), the retrieved chunks with scores, an `answerable` flag, and latency |
+| `GET` | `/documents` | Lists sample and uploaded documents with their chunk counts |
+| `POST` | `/documents` | Upload a `.txt` or `.pdf` (up to 10 MB); the index is rebuilt so it can be searched |
+| `DELETE` | `/documents/{name}` | Remove an uploaded document (sample documents are read-only) |
 | `GET` | `/index` | Embedding model, dimension, index type, document and chunk counts |
 | `GET` | `/health` | Reports whether the index is loaded (`503` on `/query` until it is) |
 
@@ -91,7 +94,7 @@ curl -s -X POST localhost:8000/query \
   -d '{"question": "Why is an inner-product index used for cosine similarity?", "top_k": 3}'
 ```
 
-Settings come from environment variables: `DATA_DIR`, `INDEX_DIR`, `EMBEDDING_MODEL`, `CHUNK_SIZE`, `CHUNK_OVERLAP` and `INDEX_TYPE` (defaults are in `api/main.py`).
+Settings come from environment variables: `DATA_DIR`, `UPLOAD_DIR`, `INDEX_DIR`, `CONFIDENCE_THRESHOLD` (0.5), `MAX_UPLOAD_MB` (10), `CORS_ORIGINS`, `EMBEDDING_MODEL`, `CHUNK_SIZE`, `CHUNK_OVERLAP` and `INDEX_TYPE` (defaults are in `api/main.py`).
 
 ## Docker
 
