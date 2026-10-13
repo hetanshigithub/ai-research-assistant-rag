@@ -1,0 +1,7 @@
+A vector database stores embeddings and answers nearest-neighbor queries: given a query vector, it returns the stored vectors that are closest under a similarity measure. FAISS is a widely used open-source library for this job. It is a library rather than a server, so it runs inside the application process and keeps its index in memory.
+
+The simplest FAISS index is a flat index, which compares the query against every stored vector. Flat search is exact, needs no training step, and is perfectly adequate for collections of up to a few hundred thousand vectors. When vectors are L2-normalized, inner product equals cosine similarity, so an inner-product flat index can be used for cosine search.
+
+Approximate indexes trade a little accuracy for speed. An IVF index groups vectors into clusters and only searches the clusters closest to the query. An HNSW index builds a layered graph of neighbors and walks it from coarse to fine levels. Both can answer queries in a fraction of the time of an exhaustive scan, but they may occasionally miss a true nearest neighbor, so teams should measure recall against an exact baseline.
+
+An index must be persisted if the application should not re-embed its documents on every start. FAISS can write an index to disk and read it back, but it stores only vectors, so the chunk text and metadata need to be saved alongside it. The saved index is only valid for the embedding model that produced it, which means changing the model requires a rebuild.

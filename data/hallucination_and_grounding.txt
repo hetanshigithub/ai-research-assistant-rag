@@ -1,0 +1,7 @@
+A hallucination is a statement that sounds plausible but is not supported by the source material. Retrieval-augmented generation reduces hallucination by supplying relevant passages, but it does not remove it. A model can still ignore the context, blend it with memorized facts, or answer confidently when the retrieved passages are irrelevant.
+
+Grounding checks compare each claim in an answer with the retrieved text. A simple check measures how many words of a claim appear in the context. Stronger checks use an entailment model or a second language model as a judge. Whatever method is used, it should be run on a fixed question set so changes in quality are visible over time.
+
+A trustworthy system knows when not to answer. If the best retrieved passage has a low similarity score, the system should say that the documents do not cover the question instead of producing a fluent guess. Confidence scores are only useful if they are checked against questions the documents cannot answer, because an uncalibrated score can look reassuring while being meaningless.
+
+Citations make answers auditable. Returning the source file and chunk identifier for each supporting passage lets a reviewer verify a claim in seconds, and it makes systematic retrieval failures easy to spot.

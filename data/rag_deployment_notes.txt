@@ -1,0 +1,7 @@
+Serving a retrieval system as an API separates the slow work from the fast work. Loading the embedding model and building the index happen once at startup, while each request only embeds the question, searches the index, and formats an answer. Keeping this split lets a small CPU service answer queries in tens of milliseconds.
+
+A service should expose a health endpoint that reports whether the index is loaded, so an orchestrator can avoid sending traffic to an instance that is still starting. It should also fail fast at startup if the document folder is missing or empty, rather than starting and returning errors later.
+
+Containers make deployments reproducible. Baking the embedding model into the image avoids downloading it on every start and allows the container to run without network access. The persisted index belongs on a volume, and it should be rebuilt automatically when the documents, the chunking settings, or the embedding model change.
+
+Production systems log the question, the retrieved chunk identifiers, and the scores for every request. These logs are the raw material for evaluation: failed queries can be reviewed, labeled, and added to the question set so the same mistake is caught by a test next time.

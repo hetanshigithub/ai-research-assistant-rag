@@ -1,0 +1,7 @@
+Chunking decides what a retriever can return. Fixed-size chunking splits text every N words with some overlap, and it is the default choice because it is simple and predictable. Its weakness is that boundaries ignore meaning, so a sentence or an argument can be cut in half.
+
+Sentence-aware chunking groups whole sentences until a size limit is reached, which keeps statements intact. Semantic chunking goes further and starts a new chunk when the topic changes, usually by comparing the embeddings of neighboring sentences. It can produce cleaner chunks but costs more to compute and is harder to reproduce.
+
+Chunk size is a trade-off. Small chunks give precise matches and cheap context but lose surrounding detail. Large chunks keep context but dilute the embedding with unrelated sentences, which lowers similarity scores for focused questions. The right size should be chosen by measuring retrieval recall on a labeled question set rather than by intuition.
+
+Every chunk should carry metadata such as the source file, position, and a stable identifier. This allows an answer to cite its evidence and lets engineers trace a bad answer back to the exact passage that produced it.

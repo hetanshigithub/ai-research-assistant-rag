@@ -1,0 +1,7 @@
+An embedding model maps text to a dense vector so that passages with similar meaning end up close together. Sentence-embedding models such as MiniLM produce vectors of a few hundred dimensions and run comfortably on a CPU, which makes them a practical choice for local retrieval systems.
+
+Embedding quality depends on how well the model's training data matches the documents. A general-purpose model may place two finance passages close together because they share vocabulary, even when they make opposite claims. Domain-specific text, abbreviations, and numbers are common weak spots, so a retrieval system should be evaluated on its own documents rather than on public benchmarks alone.
+
+Most retrieval systems normalize embeddings to unit length so that cosine similarity can be computed as a simple dot product. Queries and documents must be embedded by the same model and with the same settings; mixing models silently produces meaningless similarity scores.
+
+Embedding models are versioned artifacts. When a model is upgraded, every stored vector becomes stale and the index must be rebuilt. Recording the model name and vector dimension next to the index lets a service detect the mismatch at startup instead of returning poor results.

@@ -1,0 +1,7 @@
+Recall at k measures whether the evidence needed to answer a question appears among the top k retrieved chunks. If a question needs two pieces of evidence and only one is retrieved, recall is one half. Recall at k is the most important retrieval metric for RAG because the generator cannot use evidence it never receives.
+
+Hit rate at k is a looser metric that counts a query as a success when at least one relevant chunk is in the top k. Mean reciprocal rank rewards placing the first relevant chunk near the top: a first relevant result at rank one scores 1, at rank two scores one half, and at rank four scores one quarter.
+
+Precision at k measures how much of the retrieved context is relevant. High recall with low precision means the generator receives the right evidence buried among distracting passages, which can lead to confused answers and wasted context length.
+
+Metrics are only meaningful with a good evaluation set. Questions should be written from the documents, each labeled with the passages that answer it, and the set should include questions the documents cannot answer. Labeling evidence by its text rather than by chunk number keeps the labels valid when the chunking settings change.
