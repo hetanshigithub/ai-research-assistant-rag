@@ -1,0 +1,13 @@
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount your own documents here; the index rebuilds automatically when they change.
+      - ./data:/app/data:ro
+      # Persist the FAISS index between restarts.
+      - index:/app/index
+
+volumes:
+  index:
